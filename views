@@ -1,0 +1,32 @@
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+
+def login_view(request):
+    error = None
+    if request.user.is_authenticated:
+        if request.user.is_staff:
+            return redirect('admin_dashboard')
+        elif request.user.groups.filter(name='Doctor').exists():
+            return redirect('doctor_portal')
+        elif request.user.groups.filter(name='Nurse').exists():
+            return redirect('nurse_portal')
+        else:
+            return redirect('patient_portal')
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            if user.is_staff:
+                return redirect('admin_dashboard')
+            elif user.groups.filter(name='Doctor').exists():
+                return redirect('doctor_portal')
+            elif user.groups.filter(name='Nurse').exists():
+                return redirect('nurse_portal')
+            else:
+                return redirect('patient_portal')
+        else:
+            error = 'Invalid username or password'
+    return render(request, 'hospital_app/login.html', {'error': error})
